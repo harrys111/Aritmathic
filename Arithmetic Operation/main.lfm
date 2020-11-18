@@ -1,0 +1,97 @@
+object FormMain: TFormMain
+  Left = 678
+  Height = 606
+  Top = 120
+  Width = 1102
+  Caption = 'Arithmetic Operation'
+  ClientHeight = 606
+  ClientWidth = 1102
+  LCLVersion = '2.0.6.0'
+  object ButtonLoad1: TButton
+    Left = 27
+    Height = 25
+    Top = 21
+    Width = 86
+    Caption = 'Load Image'
+    OnClick = ButtonLoad1Click
+    ParentFont = False
+    TabOrder = 0
+  end
+  object ButtonLoad2: TButton
+    Left = 27
+    Height = 25
+    Top = 59
+    Width = 86
+    Caption = 'Load Texture 1'
+    OnClick = ButtonLoad2Click
+    ParentFont = False
+    TabOrder = 1
+  end
+  object ButtonLoad3: TButton
+    Left = 27
+    Height = 25
+    Top = 96
+    Width = 86
+    Caption = 'Load Texture 2'
+    OnClick = ButtonLoad3Click
+    ParentFont = False
+    TabOrder = 2
+  end
+  object ImageTexture1: TImage
+    Left = 149
+    Height = 90
+    Top = 24
+    Width = 90
+    OnClick = ImageTexture1Click
+  end
+  object ImageTexture2: TImage
+    Left = 576
+    Height = 90
+    Top = 21
+    Width = 90
+    OnClick = ImageTexture2Click
+  end
+  object ImagePattern: TImage
+    Left = 149
+    Height = 135
+    Top = 360
+    Width = 135
+    AutoSize = True
+    OnClick = ImagePatternClick
+  end
+  object ImageResult: TImage
+    Left = 576
+    Height = 90
+    Top = 360
+    Width = 90
+    OnClick = ImageResultClick
+  end
+  object ButtonSave: TButton
+    Left = 27
+    Height = 25
+    Top = 165
+    Width = 85
+    Caption = 'Save Image'
+    OnClick = ButtonSaveClick
+    ParentFont = False
+    TabOrder = 3
+  end
+  object ButtonMagic: TButton
+    Left = 27
+    Height = 25
+    Top = 203
+    Width = 85
+    Caption = 'Magic'
+    OnClick = ButtonMagicClick
+    ParentFont = False
+    TabOrder = 4
+  end
+  object SavePictureDialog1: TSavePictureDialog
+    left = 1018
+    top = 89
+  end
+  object OpenPictureDialog1: TOpenPictureDialog
+    left = 1024
+    top = 149
+  end
+end

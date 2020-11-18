@@ -1,0 +1,89 @@
+object FormMain: TFormMain
+  Left = 118
+  Height = 909
+  Top = 11
+  Width = 1653
+  Caption = 'Arithmetic Operation'
+  ClientHeight = 909
+  ClientWidth = 1653
+  DesignTimePPI = 144
+  LCLVersion = '2.0.6.0'
+  object ButtonLoad1: TButton
+    Left = 40
+    Height = 38
+    Top = 32
+    Width = 129
+    Caption = 'Load Image'
+    OnClick = ButtonLoad1Click
+    TabOrder = 0
+  end
+  object ButtonLoad2: TButton
+    Left = 40
+    Height = 38
+    Top = 88
+    Width = 129
+    Caption = 'Load Texture 1'
+    OnClick = ButtonLoad2Click
+    TabOrder = 1
+  end
+  object ButtonLoad3: TButton
+    Left = 40
+    Height = 38
+    Top = 144
+    Width = 129
+    Caption = 'Load Texture 2'
+    OnClick = ButtonLoad3Click
+    TabOrder = 2
+  end
+  object ImageTexture1: TImage
+    Left = 224
+    Height = 135
+    Top = 32
+    Width = 135
+  end
+  object ImageTexture2: TImage
+    Left = 864
+    Height = 135
+    Top = 32
+    Width = 135
+  end
+  object ImagePattern: TImage
+    Left = 224
+    Height = 135
+    Top = 424
+    Width = 135
+    AutoSize = True
+  end
+  object ImageResult: TImage
+    Left = 864
+    Height = 135
+    Top = 424
+    Width = 135
+  end
+  object ButtonSave: TButton
+    Left = 41
+    Height = 38
+    Top = 248
+    Width = 127
+    Caption = 'Save Image'
+    OnClick = ButtonSaveClick
+    TabOrder = 3
+  end
+  object ButtonMagic: TButton
+    Left = 41
+    Height = 38
+    Top = 304
+    Width = 128
+    Caption = 'Magic'
+    OnClick = ButtonMagicClick
+    TabOrder = 4
+  end
+  object SavePictureDialog1: TSavePictureDialog
+    left = 1527
+    top = 133
+  end
+  object OpenPictureDialog1: TOpenPictureDialog
+    left = 1536
+    top = 224
+  end
+end
