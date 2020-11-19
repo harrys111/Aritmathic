@@ -1,89 +1,98 @@
 object FormMain: TFormMain
-  Left = 118
-  Height = 909
-  Top = 11
+  Left = 158
+  Height = 899
+  Top = 38
   Width = 1653
   Caption = 'Arithmetic Operation'
-  ClientHeight = 909
+  ClientHeight = 899
   ClientWidth = 1653
   DesignTimePPI = 144
-  LCLVersion = '2.0.6.0'
-  object ButtonLoad1: TButton
-    Left = 40
+  LCLVersion = '2.0.10.0'
+  object ButtonLoadPattern: TButton
+    Left = 39
     Height = 38
     Top = 32
     Width = 129
-    Caption = 'Load Image'
-    OnClick = ButtonLoad1Click
+    Caption = 'Load Pattern'
+    OnClick = ButtonLoadPatternClick
+    ParentFont = False
     TabOrder = 0
   end
-  object ButtonLoad2: TButton
-    Left = 40
+  object ButtonLoadTexture: TButton
+    Left = 39
     Height = 38
     Top = 88
     Width = 129
-    Caption = 'Load Texture 1'
-    OnClick = ButtonLoad2Click
+    Caption = 'Load Texture'
+    OnClick = ButtonLoadTextureClick
+    ParentFont = False
     TabOrder = 1
   end
-  object ButtonLoad3: TButton
+  object ButtonLoadBackground: TButton
     Left = 40
     Height = 38
     Top = 144
     Width = 129
-    Caption = 'Load Texture 2'
-    OnClick = ButtonLoad3Click
+    Caption = 'Load Background'
+    OnClick = ButtonLoadBackgroundClick
+    ParentFont = False
     TabOrder = 2
   end
-  object ImageTexture1: TImage
-    Left = 224
+  object ImageBackground: TImage
+    Left = 248
     Height = 135
-    Top = 32
+    Top = 416
     Width = 135
+    OnClick = ImageBackgroundClick
   end
-  object ImageTexture2: TImage
+  object ImageTexture: TImage
     Left = 864
     Height = 135
     Top = 32
     Width = 135
+    OnClick = ImageTextureClick
   end
   object ImagePattern: TImage
-    Left = 224
+    Left = 248
     Height = 135
-    Top = 424
+    Top = 32
     Width = 135
     AutoSize = True
+    OnClick = ImagePatternClick
   end
   object ImageResult: TImage
     Left = 864
     Height = 135
-    Top = 424
+    Top = 416
     Width = 135
+    OnClick = ImageResultClick
   end
   object ButtonSave: TButton
-    Left = 41
+    Left = 40
     Height = 38
     Top = 248
-    Width = 127
+    Width = 128
     Caption = 'Save Image'
     OnClick = ButtonSaveClick
+    ParentFont = False
     TabOrder = 3
   end
   object ButtonMagic: TButton
-    Left = 41
+    Left = 40
     Height = 38
     Top = 304
     Width = 128
     Caption = 'Magic'
     OnClick = ButtonMagicClick
+    ParentFont = False
     TabOrder = 4
   end
   object SavePictureDialog1: TSavePictureDialog
-    left = 1527
-    top = 133
+    Left = 1527
+    Top = 134
   end
   object OpenPictureDialog1: TOpenPictureDialog
-    left = 1536
-    top = 224
+    Left = 1536
+    Top = 224
   end
 end

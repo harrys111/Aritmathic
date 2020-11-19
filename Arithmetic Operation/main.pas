@@ -14,10 +14,13 @@ type
   end;
 
 type
-  BitmapColor = array [0..1000, 0..1000] of Channel;
+  BitmapColor = array [0..400, 0..400] of Channel;
 
 type
-  BitmapBinary = array [0..1000, 0..1000] of Boolean;
+  BitmapBinary = array [0..400, 0..400] of Boolean;
+
+type
+  BitmapGrayscale = array [0..400, 0..400] of Byte;
 
 type
 
@@ -26,31 +29,34 @@ type
   TFormMain = class(TForm)
     ButtonMagic: TButton;
     ButtonSave: TButton;
-    ButtonLoad1: TButton;
-    ButtonLoad2: TButton;
-    ButtonLoad3: TButton;
-    ImageTexture1: TImage;
-    ImageTexture2: TImage;
+    ButtonLoadPattern: TButton;
+    ButtonLoadTexture: TButton;
+    ButtonLoadBackground: TButton;
+    ImageBackground: TImage;
+    ImageTexture: TImage;
     ImagePattern: TImage;
     ImageResult: TImage;
     OpenPictureDialog1: TOpenPictureDialog;
     SavePictureDialog1: TSavePictureDialog;
-    procedure ButtonLoad1Click(Sender: TObject);
-    procedure ButtonLoad2Click(Sender: TObject);
-    procedure ButtonLoad3Click(Sender: TObject);
+    procedure ButtonLoadPatternClick(Sender: TObject);
+    procedure ButtonLoadTextureClick(Sender: TObject);
+    procedure ButtonLoadBackgroundClick(Sender: TObject);
     procedure ButtonMagicClick(Sender: TObject);
     procedure ButtonSaveClick(Sender: TObject);
     procedure ImagePatternClick(Sender: TObject);
     procedure ImageResultClick(Sender: TObject);
-    procedure ImageTexture1Click(Sender: TObject);
-    procedure ImageTexture2Click(Sender: TObject);
+    procedure ImageBackgroundClick(Sender: TObject);
+    procedure ImageTextureClick(Sender: TObject);
   private
     procedure Binarization();
+    procedure Grayscaling();
     procedure MergeTexture();
     function MergePatternWithTexture(Texture: BitmapColor; Binary: BitmapBinary): BitmapColor;
     function InversBinaryImage(Binary: BitmapBinary): BitmapBinary;
     function BoolToByte(value: Boolean):byte;
     function Jikalau(value: integer):byte;
+    procedure PatternMultiplyTexture();
+    procedure PatternTextureAddBackground();
 
   public
 
@@ -69,12 +75,13 @@ uses
   windows;
 
 var
-   BitmapImage, BitmapTexture1, BitmapTexture2: BitmapColor;
-   BitmapBinaryImage: BitmapBinary;
+   BitmapPattern, BitmapTexture, BitmapBackground, BitmapPatternMultiplyTexture, BitmapResult: BitmapColor;
+   BitmapPatternGrayscale: BitmapGrayscale;
+   BitmapPatternBinary, BitmapPatternDilation, BitmapPatternErosion: BitmapBinary;
    imageWidth, imageHeight: Integer;
 
 
-procedure TFormMain.ButtonLoad1Click(Sender: TObject);
+procedure TFormMain.ButtonLoadPatternClick(Sender: TObject);
 var
   x, y: Integer;
 begin
@@ -85,22 +92,23 @@ begin
     imageWidth:= ImagePattern.Width;
     imageHeight:= ImagePattern.Height;
 
-    ImageTexture1.Width:= imageWidth;
-    ImageTexture1.Height:= imageHeight;
+    ImageBackground.Width:= imageWidth;
+    ImageBackground.Height:= imageHeight;
 
-    ImageTexture2.Width:= imageWidth;
-    ImageTexture2.Height:= imageHeight;
+    ImageTexture.Width:= imageWidth;
+    ImageTexture.Height:= imageHeight;
 
     for y:= 1 to imageHeight do
     begin
       for x:= 1 to imageWidth do
       begin
-        BitmapImage[x, y].R:= GetRValue(ImagePattern.Canvas.Pixels[x-1, y-1]);
-        BitmapImage[x, y].G:= GetGValue(ImagePattern.Canvas.Pixels[x-1, y-1]);
-        BitmapImage[x, y].B:= GetBValue(ImagePattern.Canvas.Pixels[x-1, y-1]);
+        BitmapPattern[x, y].R:= GetRValue(ImagePattern.Canvas.Pixels[x-1, y-1]);
+        BitmapPattern[x, y].G:= GetGValue(ImagePattern.Canvas.Pixels[x-1, y-1]);
+        BitmapPattern[x, y].B:= GetBValue(ImagePattern.Canvas.Pixels[x-1, y-1]);
       end;
     end;
   end;
+  Grayscaling();
   Binarization();
 end;
 
@@ -109,41 +117,41 @@ begin
   if value then BoolToByte:= 1 else BoolToByte:= 0;
 end;
 
-procedure TFormMain.ButtonLoad2Click(Sender: TObject);
+procedure TFormMain.ButtonLoadTextureClick(Sender: TObject);
 var
   x, y: Integer;
 begin
   if OpenPictureDialog1.Execute then
   begin
-    ImageTexture1.Picture.LoadFromFile(OpenPictureDialog1.FileName);
+    ImageTexture.Picture.LoadFromFile(OpenPictureDialog1.FileName);
 
     for y:= 1 to imageHeight do
     begin
       for x:= 1 to imageWidth do
       begin
-        BitmapTexture1[x, y].R:= GetRValue(ImageTexture1.Canvas.Pixels[x-1, y-1]);
-        BitmapTexture1[x, y].G:= GetGValue(ImageTexture1.Canvas.Pixels[x-1, y-1]);
-        BitmapTexture1[x, y].B:= GetBValue(ImageTexture1.Canvas.Pixels[x-1, y-1]);
+        BitmapTexture[x, y].R:= GetRValue(ImageTexture.Canvas.Pixels[x-1, y-1]);
+        BitmapTexture[x, y].G:= GetGValue(ImageTexture.Canvas.Pixels[x-1, y-1]);
+        BitmapTexture[x, y].B:= GetBValue(ImageTexture.Canvas.Pixels[x-1, y-1]);
       end;
     end;
   end;
 end;
 
-procedure TFormMain.ButtonLoad3Click(Sender: TObject);
+procedure TFormMain.ButtonLoadBackgroundClick(Sender: TObject);
 var
   x, y: Integer;
 begin
   if OpenPictureDialog1.Execute then
   begin
-    ImageTexture2.Picture.LoadFromFile(OpenPictureDialog1.FileName);
+    ImageBackground.Picture.LoadFromFile(OpenPictureDialog1.FileName);
 
     for y:= 1 to imageHeight do
     begin
       for x:= 1 to imageWidth do
       begin
-        BitmapTexture2[x, y].R:= GetRValue(ImageTexture2.Canvas.Pixels[x-1, y-1]);
-        BitmapTexture2[x, y].G:= GetGValue(ImageTexture2.Canvas.Pixels[x-1, y-1]);
-        BitmapTexture2[x, y].B:= GetBValue(ImageTexture2.Canvas.Pixels[x-1, y-1]);
+        BitmapBackground[x, y].R:= GetRValue(ImageBackground.Canvas.Pixels[x-1, y-1]);
+        BitmapBackground[x, y].G:= GetGValue(ImageBackground.Canvas.Pixels[x-1, y-1]);
+        BitmapBackground[x, y].B:= GetBValue(ImageBackground.Canvas.Pixels[x-1, y-1]);
       end;
     end;
   end;
@@ -151,23 +159,23 @@ end;
 
 procedure TFormMain.ButtonMagicClick(Sender: TObject);
 var
-  TempBitmap1, TempBitmap2: BitmapColor;
   x, y: Integer;
-  gray, gray2: Integer;
 begin
   ImageResult.Width:= imageWidth;
   ImageResult.Height:= imageHeight;
-
+  PatternMultiplyTexture();
+  PatternTextureAddBackground();
   for y:= 1 to imageHeight do
   begin
     for x:= 1 to imageWidth do
     begin
-      gray:= (BitmapTexture1[x, y].R + BitmapTexture1[x, y].G + BitmapTexture1[x, y].B) div 3;
-      gray2:= (BitmapTexture2[x, y].R + BitmapTexture2[x, y].G + BitmapTexture2[x, y].B) div 3;
-      ImageResult.Canvas.Pixels[x-1, y-1]:= RGB(BoolToByte(BitmapBinaryImage[x, y]), BoolToByte(BitmapBinaryImage[x, y]), BoolToByte(BitmapBinaryImage[x, y]))
+      with BitmapResult[x, y] do
+      begin
+        ImageResult.Canvas.Pixels[x-1, y-1]:= RGB(R, G, B);
+      end;
     end;
   end;
-    end;
+end;
 
 function TFormMain.Jikalau(value: integer): byte;
 begin
@@ -176,24 +184,83 @@ begin
   else Jikalau := value;
 end;
 
-procedure TFormMain.Binarization();
+procedure TFormMain.Grayscaling();
 var
   x, y: Integer;
-  gray: Integer;
 begin
   for y:= 1 to imageHeight do
   begin
     for x:= 1 to imageWidth do
     begin
-      gray:= (BitmapImage[x, y].R + BitmapImage[x, y].G + BitmapImage[x, y].B) div 3;
-      if gray >= 36 then
+      with BitmapPattern[x, y] do
       begin
-        BitmapBinaryImage[x, y]:= true;
-      end
-      else
-      begin
-        BitmapBinaryImage[x, y]:= false;
+        BitmapPatternGrayscale[x, y]:= (R + G + B) div 3;
       end;
+    end;
+  end;
+end;
+
+procedure TFormMain.Binarization();
+var
+  x, y: Integer;
+  gray: Byte;
+begin
+  for y:= 1 to imageHeight do
+  begin
+    for x:= 1 to imageWidth do
+    begin
+      gray:= BitmapPatternGrayscale[x, y];
+      if gray >= 127 then
+        BitmapPatternBinary[x, y]:= true
+      else
+        BitmapPatternBinary[x, y]:= false;
+    end;
+  end;
+end;
+
+procedure TFormMain.PatternMultiplyTexture();
+var
+  x, y: Integer;
+  pixelPattern: Boolean;
+  pixelTexture, pixelResult: Channel;
+  InversBitmapPatternBinary: BitmapBinary;
+begin
+  InversBitmapPatternBinary:= InversBinaryImage(BitmapPatternBinary);
+  for y:= 1 to imageHeight do
+  begin
+    for x:= 1 to imageWidth do
+    begin
+      pixelPattern:= InversBitmapPatternBinary[x, y];
+      pixelTexture:= BitmapTexture[x, y];
+
+      pixelResult.R:= BoolToByte(pixelPattern) * pixelTexture.R;
+      pixelResult.G:= BoolToByte(pixelPattern) * pixelTexture.G;
+      pixelResult.B:= BoolToByte(pixelPattern) * pixelTexture.B;
+
+      BitmapPatternMultiplyTexture[x, y]:= pixelResult;
+    end;
+  end;
+end;
+
+procedure TFormMain.PatternTextureAddBackground();
+var
+  x, y: Integer;
+  pixelPatternTexture, pixelResult: Channel;
+  gray: Byte;
+begin
+  for y:= 1 to imageHeight do
+  begin
+    for x:= 1 to imageWidth do
+    begin
+      pixelPatternTexture:= BitmapPatternMultiplyTexture[x, y];
+      with BitmapBackground[x, y] do
+      begin
+        gray:= (R + G + B) div 3;
+      end;
+      pixelResult.R:= Jikalau(pixelPatternTexture.R + gray);
+      pixelResult.G:= Jikalau(pixelPatternTexture.G + gray);
+      pixelResult.B:= Jikalau(pixelPatternTexture.B + gray);
+      BitmapResult[x, y]:= pixelResult;
     end;
   end;
 end;
@@ -262,12 +329,12 @@ begin
 
 end;
 
-procedure TFormMain.ImageTexture1Click(Sender: TObject);
+procedure TFormMain.ImageBackgroundClick(Sender: TObject);
 begin
 
 end;
 
-procedure TFormMain.ImageTexture2Click(Sender: TObject);
+procedure TFormMain.ImageTextureClick(Sender: TObject);
 begin
 
 end;
