@@ -12,6 +12,9 @@ type
   Channel = record
     R, G, B: Byte;
   end;
+  ChannelDecimal = record
+    R, G, B: Real;
+  end;
 
 type
   BitmapColor = array [0..400, 0..400] of Channel;
@@ -21,6 +24,9 @@ type
 
 type
   BitmapGrayscale = array [0..400, 0..400] of Byte;
+
+type
+  Kernel = array[-1..1, -1..1] of Real;
 
 type
 
@@ -52,14 +58,15 @@ type
     procedure GrayscalingPattern();
     procedure GrayscalingBackground();
     procedure MergeTexture();
-    function MergePatternWithTexture(Texture: BitmapColor; Binary: BitmapBinary): BitmapColor;
     function InversBinaryImage(Binary: BitmapBinary): BitmapBinary;
     function BoolToByte(value: Boolean):byte;
     function Jikalau(value: integer):byte;
-    procedure EdgeBitmapBackground(); // using Robert Operator
+    procedure EdgeRobertBitmapBackground(); // using Robert Operator
     procedure PatternMultiplyTexture();
     procedure PatternTextureAddBackground();
-    procedure PaddingBitmapBackground();
+    function PaddingBitmap(bitmap: BitmapColor): BitmapColor;
+    function PaddingBitmap(bitmap: BitmapGrayscale): BitmapGrayscale;
+    function Filtering(bitmap: BitmapColor; K: Kernel): BitmapColor;
 
   public
 
@@ -78,10 +85,12 @@ uses
   windows;
 
 var
-   BitmapPattern, BitmapTexture, BitmapBackground, BitmapPatternMultiplyTexture, BitmapResult: BitmapColor;
+   BitmapPattern, BitmapTexture, BitmapBackground, BitmapPatternMultiplyTexture, EmboseBitmapTexture, BitmapResult: BitmapColor;
    BitmapPatternGrayscale, BitmapBackgroundGrayscale, BitmapBackgroundEdge, PaddedBitmapBackground: BitmapGrayscale;
    BitmapPatternBinary, BitmapPatternDilation, BitmapPatternErosion: BitmapBinary;
    imageWidth, imageHeight: Integer;
+   LPFKernel: array[-1..1, -1..1] of Real = ((1/9, 1/9, 1/9), (1/9, 1/9, 1/9), (1/9, 1/9, 1/9));
+   HPFKernel: array[-1..1, -1..1] of Real = ((-1, -1, -1), (-1, 9, -1), (-1, -1, -1));
 
 
 procedure TFormMain.ButtonLoadPatternClick(Sender: TObject);
@@ -138,6 +147,7 @@ begin
       end;
     end;
   end;
+  EmboseBitmapTexture:= Filtering(Filtering(BitmapTexture, LPFKernel), HPFKernel);
 end;
 
 procedure TFormMain.ButtonLoadBackgroundClick(Sender: TObject);
@@ -168,13 +178,13 @@ begin
   ImageResult.Width:= imageWidth;
   ImageResult.Height:= imageHeight;
   PatternMultiplyTexture();
-  EdgeBitmapBackground();
+  EdgeRobertBitmapBackground();
   PatternTextureAddBackground();
   for y:= 1 to imageHeight do
   begin
     for x:= 1 to imageWidth do
     begin
-      with BitmapResult[x, y] do
+      with EmboseBitmapTexture[x, y] do
       begin
         ImageResult.Canvas.Pixels[x-1, y-1]:= RGB(R, G, B);
       end;
@@ -252,7 +262,7 @@ begin
     for x:= 1 to imageWidth do
     begin
       pixelPattern:= InversBitmapPatternBinary[x, y];
-      pixelTexture:= BitmapTexture[x, y];
+      pixelTexture:= EmboseBitmapTexture[x, y];
 
       pixelResult.R:= BoolToByte(pixelPattern) * pixelTexture.R;
       pixelResult.G:= BoolToByte(pixelPattern) * pixelTexture.G;
@@ -288,32 +298,6 @@ begin
 
 end;
 
-function TFormMain.MergePatternWithTexture(Texture: BitmapColor; Binary: BitmapBinary): BitmapColor;
-var
-  x, y: Integer;
-  BitmapTemp: BitmapColor;
-begin
-  for y:= 1 to imageHeight do
-  begin
-    for x:= 1 to imageWidth do
-    begin
-      if Binary[x, y] then
-      begin
-        BitmapTemp[x, y].R:= Texture[x, y].R * 1;
-        BitmapTemp[x, y].G:= Texture[x, y].G * 1;
-        BitmapTemp[x, y].B:= Texture[x, y].B * 1;
-      end
-      else
-      begin
-        BitmapTemp[x, y].R:= 0;
-        BitmapTemp[x, y].G:= 0;
-        BitmapTemp[x, y].B:= 0;
-      end;
-    end;
-  end;
-  MergePatternWithTexture:= BitmapTemp;
-end;
-
 function TFormMain.InversBinaryImage(Binary: BitmapBinary): BitmapBinary;
 var
   x, y: Integer;
@@ -337,27 +321,7 @@ begin
   end;
 end;
 
-procedure TFormMain.PaddingBitmapBackground();
-var
-  x, y: Integer;
-  BitmapTemp: BitmapGrayscale;
-begin
-  BitmapTemp:= BitmapBackgroundGrayscale;
-  for y:= 1 to imageHeight do
-  begin
-    BitmapTemp[0, y]:= BitmapBackgroundGrayscale[1, y];
-    BitmapTemp[imageWidth+1, y]:= BitmapBackgroundGrayscale[imageWidth, y];
-  end;
-
-  for x:= 0 to imageWidth+1 do
-  begin
-    BitmapTemp[x, 0]:= BitmapTemp[x, 1];
-    BitmapTemp[x, imageHeight+1]:= BitmapTemp[x, imageHeight];
-  end;
-  PaddedBitmapBackground:= BitmapTemp;
-end;
-
-procedure TFormMain.EdgeBitmapBackground();
+procedure TFormMain.EdgeRobertBitmapBackground();
 var
   ResultBitmap: BitmapGrayscale;
   grayX, grayY: Integer;
@@ -366,7 +330,7 @@ var
   robertX: array[-1..1, -1..1] of Integer = ((1, 0, 0), (0, -1, 0), (0, 0, 0));
   robertY: array[-1..1, -1..1] of Integer = ((0, -1, 0), (1, 0, 0), (0, 0, 0));
 begin
-  PaddingBitmapBackground();
+  PaddedBitmapBackground:= PaddingBitmap(BitmapBackgroundGrayscale);
   for y:= 1 to imageHeight do
   begin
     for x:= 1 to imageWidth do
@@ -390,6 +354,79 @@ begin
     end;
   end;
   BitmapBackgroundEdge:= ResultBitmap;
+end;
+
+function TFormMain.PaddingBitmap(bitmap: BitmapColor): BitmapColor;
+var
+  x, y: Integer;
+  BitmapTemp: BitmapColor;
+begin
+  BitmapTemp:= bitmap;
+  for y:= 1 to imageHeight do
+  begin
+    BitmapTemp[0, y]:= bitmap[1, y];
+    BitmapTemp[imageWidth+1, y]:= bitmap[imageWidth, y];
+  end;
+
+  for x:= 0 to imageWidth+1 do
+  begin
+    BitmapTemp[x, 0]:= BitmapTemp[x, 1];
+    BitmapTemp[x, imageHeight+1]:= BitmapTemp[x, imageHeight];
+  end;
+  PaddingBitmap:= BitmapTemp;
+end;
+
+function TFormMain.PaddingBitmap(bitmap: BitmapGrayscale): BitmapGrayscale;
+var
+  x, y: Integer;
+  BitmapTemp: BitmapGrayscale;
+begin
+  BitmapTemp:= bitmap;
+  for y:= 1 to imageHeight do
+  begin
+    BitmapTemp[0, y]:= bitmap[1, y];
+    BitmapTemp[imageWidth+1, y]:= bitmap[imageWidth, y];
+  end;
+
+  for x:= 0 to imageWidth+1 do
+  begin
+    BitmapTemp[x, 0]:= BitmapTemp[x, 1];
+    BitmapTemp[x, imageHeight+1]:= BitmapTemp[x, imageHeight];
+  end;
+  PaddingBitmap:= BitmapTemp;
+end;
+
+function TFormMain.Filtering(bitmap: BitmapColor; K: Kernel): BitmapColor;
+var
+  x, y: Integer;
+  kx, ky: Integer;
+  ResultBitmap: BitmapColor;
+  pixel: ChannelDecimal;
+  padBitmap: BitmapColor;
+begin
+  padBitmap:= PaddingBitmap(bitmap);
+  for y:= 1 to imageHeight do
+  begin
+    for x:= 1 to imageWidth do
+    begin
+      pixel.R:= 0;
+      pixel.G:= 0;
+      pixel.B:= 0;
+      for ky:= -1 to 1 do
+      begin
+        for kx:= -1 to 1 do
+        begin
+          pixel.R:= pixel.R + (padBitmap[x-kx, y-ky].R * K[kx, ky]);
+          pixel.G:= pixel.G + (padBitmap[x-kx, y-ky].G * K[kx, ky]);
+          pixel.B:= pixel.B + (padBitmap[x-kx, y-ky].B * K[kx, ky]);
+        end;
+      end;
+      ResultBitmap[x, y].R:= Jikalau(Round(pixel.R));
+      ResultBitmap[x, y].G:= Jikalau(Round(pixel.G));
+      ResultBitmap[x, y].B:= Jikalau(Round(pixel.B));
+    end;
+  end;
+  Filtering:= ResultBitmap;
 end;
 
 procedure TFormMain.ImagePatternClick(Sender: TObject);
