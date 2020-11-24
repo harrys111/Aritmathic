@@ -77,13 +77,13 @@ object FormMain: TFormMain
     ParentFont = False
     TabOrder = 3
   end
-  object ButtonMagic: TButton
+  object ButtonExecute: TButton
     Left = 40
     Height = 38
     Top = 304
     Width = 128
     Caption = 'Execute'
-    OnClick = ButtonMagicClick
+    OnClick = ButtonExecuteClick
     ParentFont = False
     TabOrder = 4
   end

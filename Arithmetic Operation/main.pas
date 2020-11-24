@@ -27,7 +27,7 @@ type
   { TFormMain }
 
   TFormMain = class(TForm)
-    ButtonMagic: TButton;
+    ButtonExecute: TButton;
     ButtonSave: TButton;
     ButtonLoadPattern: TButton;
     ButtonLoadTexture: TButton;
@@ -41,22 +41,25 @@ type
     procedure ButtonLoadPatternClick(Sender: TObject);
     procedure ButtonLoadTextureClick(Sender: TObject);
     procedure ButtonLoadBackgroundClick(Sender: TObject);
-    procedure ButtonMagicClick(Sender: TObject);
+    procedure ButtonExecuteClick(Sender: TObject);
     procedure ButtonSaveClick(Sender: TObject);
     procedure ImagePatternClick(Sender: TObject);
     procedure ImageResultClick(Sender: TObject);
     procedure ImageBackgroundClick(Sender: TObject);
     procedure ImageTextureClick(Sender: TObject);
   private
-    procedure Binarization();
-    procedure Grayscaling();
+    procedure BinarizationPattern();
+    procedure GrayscalingPattern();
+    procedure GrayscalingBackground();
     procedure MergeTexture();
     function MergePatternWithTexture(Texture: BitmapColor; Binary: BitmapBinary): BitmapColor;
     function InversBinaryImage(Binary: BitmapBinary): BitmapBinary;
     function BoolToByte(value: Boolean):byte;
     function Jikalau(value: integer):byte;
+    procedure EdgeBitmapBackground(); // using Robert Operator
     procedure PatternMultiplyTexture();
     procedure PatternTextureAddBackground();
+    procedure PaddingBitmapBackground();
 
   public
 
@@ -76,7 +79,7 @@ uses
 
 var
    BitmapPattern, BitmapTexture, BitmapBackground, BitmapPatternMultiplyTexture, BitmapResult: BitmapColor;
-   BitmapPatternGrayscale: BitmapGrayscale;
+   BitmapPatternGrayscale, BitmapBackgroundGrayscale, BitmapBackgroundEdge, PaddedBitmapBackground: BitmapGrayscale;
    BitmapPatternBinary, BitmapPatternDilation, BitmapPatternErosion: BitmapBinary;
    imageWidth, imageHeight: Integer;
 
@@ -108,8 +111,8 @@ begin
       end;
     end;
   end;
-  Grayscaling();
-  Binarization();
+  GrayscalingPattern();
+  BinarizationPattern();
 end;
 
 function TFormMain.BoolToByte(value: Boolean): Byte;
@@ -155,15 +158,17 @@ begin
       end;
     end;
   end;
+  GrayscalingBackground();
 end;
 
-procedure TFormMain.ButtonMagicClick(Sender: TObject);
+procedure TFormMain.ButtonExecuteClick(Sender: TObject);
 var
   x, y: Integer;
 begin
   ImageResult.Width:= imageWidth;
   ImageResult.Height:= imageHeight;
   PatternMultiplyTexture();
+  EdgeBitmapBackground();
   PatternTextureAddBackground();
   for y:= 1 to imageHeight do
   begin
@@ -184,7 +189,7 @@ begin
   else Jikalau := value;
 end;
 
-procedure TFormMain.Grayscaling();
+procedure TFormMain.GrayscalingPattern();
 var
   x, y: Integer;
 begin
@@ -200,7 +205,23 @@ begin
   end;
 end;
 
-procedure TFormMain.Binarization();
+procedure TFormMain.GrayscalingBackground();
+var
+  x, y: Integer;
+begin
+  for y:= 1 to imageHeight do
+  begin
+    for x:= 1 to imageWidth do
+    begin
+      with BitmapBackground[x, y] do
+      begin
+        BitmapBackgroundGrayscale[x, y]:= (R + G + B) div 3;
+      end;
+    end;
+  end;
+end;
+
+procedure TFormMain.BinarizationPattern();
 var
   x, y: Integer;
   gray: Byte;
@@ -253,10 +274,7 @@ begin
     for x:= 1 to imageWidth do
     begin
       pixelPatternTexture:= BitmapPatternMultiplyTexture[x, y];
-      with BitmapBackground[x, y] do
-      begin
-        gray:= (R + G + B) div 3;
-      end;
+      gray:= BitmapBackgroundEdge[x, y];
       pixelResult.R:= Jikalau(pixelPatternTexture.R + gray);
       pixelResult.G:= Jikalau(pixelPatternTexture.G + gray);
       pixelResult.B:= Jikalau(pixelPatternTexture.B + gray);
@@ -317,6 +335,61 @@ begin
   begin
     ImageResult.Picture.SaveToFile(SavePictureDialog1.FileName);
   end;
+end;
+
+procedure TFormMain.PaddingBitmapBackground();
+var
+  x, y: Integer;
+  BitmapTemp: BitmapGrayscale;
+begin
+  BitmapTemp:= BitmapBackgroundGrayscale;
+  for y:= 1 to imageHeight do
+  begin
+    BitmapTemp[0, y]:= BitmapBackgroundGrayscale[1, y];
+    BitmapTemp[imageWidth+1, y]:= BitmapBackgroundGrayscale[imageWidth, y];
+  end;
+
+  for x:= 0 to imageWidth+1 do
+  begin
+    BitmapTemp[x, 0]:= BitmapTemp[x, 1];
+    BitmapTemp[x, imageHeight+1]:= BitmapTemp[x, imageHeight];
+  end;
+  PaddedBitmapBackground:= BitmapTemp;
+end;
+
+procedure TFormMain.EdgeBitmapBackground();
+var
+  ResultBitmap: BitmapGrayscale;
+  grayX, grayY: Integer;
+  gray: Integer;
+  x, y, kx, ky: Integer;
+  robertX: array[-1..1, -1..1] of Integer = ((1, 0, 0), (0, -1, 0), (0, 0, 0));
+  robertY: array[-1..1, -1..1] of Integer = ((0, -1, 0), (1, 0, 0), (0, 0, 0));
+begin
+  PaddingBitmapBackground();
+  for y:= 1 to imageHeight do
+  begin
+    for x:= 1 to imageWidth do
+    begin
+      grayX:= 0;
+      grayY:= 0;
+      for ky:= -1 to 1 do
+      begin
+        for kx:= -1 to 1 do
+        begin
+          grayX:= grayX + (PaddedBitmapBackground[x-kx, y-ky] * robertX[kx, ky]);
+          grayY:= grayY + (PaddedBitmapBackground[x-kx, y-ky] * robertY[kx, ky]);
+        end;
+      end;
+      gray:= 0;
+      if grayX > grayY then
+        gray:= grayX
+      else
+        gray:= grayY;
+      ResultBitmap[x, y]:= Jikalau(Round(gray));
+    end;
+  end;
+  BitmapBackgroundEdge:= ResultBitmap;
 end;
 
 procedure TFormMain.ImagePatternClick(Sender: TObject);
