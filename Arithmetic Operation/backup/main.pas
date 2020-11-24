@@ -160,11 +160,11 @@ end;
 procedure TFormMain.ButtonMagicClick(Sender: TObject);
 var
   x, y: Integer;
-  gray: Byte;
 begin
   ImageResult.Width:= imageWidth;
   ImageResult.Height:= imageHeight;
   PatternMultiplyTexture();
+  PatternTextureAddBackground();
   for y:= 1 to imageHeight do
   begin
     for x:= 1 to imageWidth do

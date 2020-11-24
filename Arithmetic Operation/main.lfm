@@ -12,17 +12,17 @@ object FormMain: TFormMain
     Left = 39
     Height = 38
     Top = 32
-    Width = 129
+    Width = 162
     Caption = 'Load Pattern'
     OnClick = ButtonLoadPatternClick
     ParentFont = False
     TabOrder = 0
   end
   object ButtonLoadTexture: TButton
-    Left = 39
+    Left = 40
     Height = 38
     Top = 88
-    Width = 129
+    Width = 161
     Caption = 'Load Texture'
     OnClick = ButtonLoadTextureClick
     ParentFont = False
@@ -32,7 +32,7 @@ object FormMain: TFormMain
     Left = 40
     Height = 38
     Top = 144
-    Width = 129
+    Width = 161
     Caption = 'Load Background'
     OnClick = ButtonLoadBackgroundClick
     ParentFont = False
@@ -82,7 +82,7 @@ object FormMain: TFormMain
     Height = 38
     Top = 304
     Width = 128
-    Caption = 'Magic'
+    Caption = 'Execute'
     OnClick = ButtonMagicClick
     ParentFont = False
     TabOrder = 4
