@@ -67,6 +67,7 @@ type
     function PaddingBitmap(bitmap: BitmapColor): BitmapColor;
     function PaddingBitmap(bitmap: BitmapGrayscale): BitmapGrayscale;
     function Filtering(bitmap: BitmapColor; K: Kernel): BitmapColor;
+    function Morphology(bitmap: BitmapBinary; chosen: String; loop: Integer): BitmapBinary;
 
   public
 
@@ -87,11 +88,11 @@ uses
 var
    BitmapPattern, BitmapTexture, BitmapBackground, BitmapPatternMultiplyTexture, EmboseBitmapTexture, BitmapResult: BitmapColor;
    BitmapPatternGrayscale, BitmapBackgroundGrayscale, BitmapBackgroundEdge, PaddedBitmapBackground: BitmapGrayscale;
-   BitmapPatternBinary, BitmapPatternDilation, BitmapPatternErosion: BitmapBinary;
+   BitmapPatternBinary, BitmapPatternMorphology: BitmapBinary;
    imageWidth, imageHeight: Integer;
    LPFKernel: array[-1..1, -1..1] of Real = ((1/9, 1/9, 1/9), (1/9, 1/9, 1/9), (1/9, 1/9, 1/9));
    HPFKernel: array[-1..1, -1..1] of Real = ((-1, -1, -1), (-1, 9, -1), (-1, -1, -1));
-
+   SE: array[-1..1, -1..1] of Byte = ((1, 1, 1), (1, 1, 1), (1, 1, 1));
 
 procedure TFormMain.ButtonLoadPatternClick(Sender: TObject);
 var
@@ -122,6 +123,7 @@ begin
   end;
   GrayscalingPattern();
   BinarizationPattern();
+  BitmapPatternMorphology:= Morphology(Morphology(BitmapPatternBinary, 'erosion', 1), 'dilation', 1);
 end;
 
 function TFormMain.BoolToByte(value: Boolean): Byte;
@@ -184,7 +186,7 @@ begin
   begin
     for x:= 1 to imageWidth do
     begin
-      with EmboseBitmapTexture[x, y] do
+      with BitmapResult[x, y] do
       begin
         ImageResult.Canvas.Pixels[x-1, y-1]:= RGB(R, G, B);
       end;
@@ -256,7 +258,7 @@ var
   pixelTexture, pixelResult: Channel;
   InversBitmapPatternBinary: BitmapBinary;
 begin
-  InversBitmapPatternBinary:= InversBinaryImage(BitmapPatternBinary);
+  InversBitmapPatternBinary:= InversBinaryImage(BitmapPatternMorphology);
   for y:= 1 to imageHeight do
   begin
     for x:= 1 to imageWidth do
@@ -427,6 +429,42 @@ begin
     end;
   end;
   Filtering:= ResultBitmap;
+end;
+
+function TFormMain.Morphology(bitmap: BitmapBinary; chosen: String; loop: Integer): BitmapBinary;
+var
+  x, y: Integer;
+  kx, ky: Integer;
+  m: Integer;
+  BitmapTemp: BitmapBinary;
+  BitmapInput: BitmapBinary;
+begin
+  BitmapInput:= bitmap;
+  for m:= 1 to loop do
+  begin
+    for y:= 1 to imageHeight do
+    begin
+      for x:= 1 to imageWidth do
+      begin
+        if (CompareText(chosen, 'erosion') = 0) then
+          BitmapTemp[x, y]:= true
+        else if (CompareText(chosen, 'dilation') = 0) then
+          BitmapTemp[x, y]:= false;
+        for ky:= -1 to 1 do
+        begin
+          for kx:= -1 to 1 do
+          begin
+            if (CompareText(chosen, 'erosion') = 0) then
+              BitmapTemp[x, y]:= BitmapTemp[x, y] AND (BoolToByte(BitmapInput[x-kx, y-ky]) = SE[kx, ky])
+            else if (CompareText(chosen, 'dilation') = 0) then
+              BitmapTemp[x, y]:= BitmapTemp[x, y] OR (BoolToByte(BitmapInput[x-kx, y-ky]) = SE[kx, ky]);
+          end;
+        end;
+      end;
+    end;
+    BitmapInput:= BitmapTemp;
+  end;
+  Morphology:= BitmapInput;
 end;
 
 procedure TFormMain.ImagePatternClick(Sender: TObject);
